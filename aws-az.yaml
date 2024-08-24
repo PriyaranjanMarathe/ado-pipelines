@@ -27,7 +27,13 @@ stages:
           curl -o python-installer.exe https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
           python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 /log install.log
           type install.log
-          set "PATH=%PATH%;C:\Python39\Scripts;C:\Python39"
+          if exist "C:\Python39\python.exe" ( 
+              set "PYTHON_PATH=C:\Python39" 
+          ) else (
+              echo "Python installation failed."
+              exit 1
+          )
+          set "PATH=%PATH%;%PYTHON_PATH%\Scripts;%PYTHON_PATH%"
 
     # Install AWS CLI
     - task: CmdLine@2
@@ -38,7 +44,24 @@ stages:
           echo Installing AWS CLI...
           curl "https://awscli.amazonaws.com/AWSCLIV2.msi" -o "AWSCLIV2.msi"
           msiexec.exe /i AWSCLIV2.msi /quiet
-          set "PATH=%PATH%;C:\Program Files\Amazon\AWSCLIV2\"
+          if exist "C:\Program Files\Amazon\AWSCLIV2\aws.exe" ( 
+              set "AWS_CLI_PATH=C:\Program Files\Amazon\AWSCLIV2" 
+          ) else (
+              echo "AWS CLI installation failed."
+              exit 1
+          )
+          set "PATH=%PATH%;%AWS_CLI_PATH%"
+
+    # Configure AWS credentials
+    - task: CmdLine@2
+      name: ConfigureAWSCredentials
+      displayName: 'Configure AWS CLI credentials'
+      inputs:
+        script: |
+          echo Configuring AWS credentials...
+          aws configure set aws_access_key_id %aws_id%
+          aws configure set aws_secret_access_key %aws_access_key%
+          aws configure set default.region us-east-1
 
     # Create S3 bucket
     - task: CmdLine@2
@@ -47,11 +70,9 @@ stages:
       inputs:
         script: |
           cd az-devops\aws-ep7
-          C:\Python39\python -m venv env
+          %PYTHON_PATH%\python -m venv env
           call env\Scripts\activate.bat
-          C:\Python39\Scripts\pip install awscli
-          set AWS_ACCESS_KEY_ID=%aws_id%
-          set AWS_SECRET_ACCESS_KEY=%aws_access_key%
+          %PYTHON_PATH%\Scripts\pip install awscli
           aws s3api create-bucket --bucket dl-azdevops-ep7 --region us-east-1
           deactivate
 
@@ -68,8 +89,6 @@ stages:
         script: |
           cd az-devops\aws-ep7
           call env\Scripts\activate.bat
-          C:\Python39\Scripts\pip install awscli
-          set AWS_ACCESS_KEY_ID=%aws_id%
-          set AWS_SECRET_ACCESS_KEY=%aws_access_key%
+          %PYTHON_PATH%\Scripts\pip install awscli
           aws s3 sync . s3://dl-azdevops-ep7
           deactivate
