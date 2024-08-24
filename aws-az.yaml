@@ -17,6 +17,21 @@ stages:
     #### Steps inside the Job
     steps:
 
+    # Check and remove any existing Python installations
+    - task: CmdLine@2
+      name: CheckAndRemovePython
+      displayName: 'Check and Remove Existing Python Installation'
+      inputs:
+        script: |
+          echo Checking for existing Python installation...
+          where python || (
+            echo "No existing Python installation found."
+          )
+          if exist "C:\Python39" (
+            echo "Existing Python installation found. Removing..."
+            rmdir /s /q C:\Python39
+          )
+
     # Install Python if not already installed
     - task: CmdLine@2
       name: InstallPython
