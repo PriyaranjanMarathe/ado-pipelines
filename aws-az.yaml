@@ -23,7 +23,7 @@ stages:
       displayName: 'Check if Python is installed'
       inputs:
         script: |
-          python --version || echo "Python is not installed."
+          python --version || (echo "Python is not installed." && exit 0)
 
     # Install Python if it's not already installed
     - task: CmdLine@2
