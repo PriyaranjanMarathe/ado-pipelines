@@ -13,100 +13,44 @@ stages:
   jobs:
 
   ### CI Job
-  - job: createStorage
+  - job: manageModelOutputs
     #### Steps inside the Job
     steps:
 
-    # Check and remove any existing Python installations
+    # Step 1: Create a folder called "model_outputs" and a file "champion_model.pt" inside it
     - task: CmdLine@2
-      name: CheckAndRemovePython
-      displayName: 'Check and Remove Existing Python Installation'
+      name: CreateModelOutputs
+      displayName: 'Create model_outputs folder and champion_model.pt file'
       inputs:
         script: |
-          echo Checking for existing Python installation...
-          where python
-          if %ERRORLEVEL% NEQ 0 (
-            echo "No existing Python installation found."
+          echo Creating model_outputs folder...
+          mkdir model_outputs
+          echo Creating champion_model.pt file...
+          echo > model_outputs\champion_model.pt
+
+    # Step 2: Create a file "model_modified.txt" with flag "True"
+    - task: CmdLine@2
+      name: CreateFlagFile
+      displayName: 'Create model_modified.txt file with flag "True"'
+      inputs:
+        script: |
+          echo Creating model_modified.txt file...
+          echo True > model_outputs\model_modified.txt
+
+    # Step 3: Check if the flag is "True" and copy the model_outputs folder to the local build agent
+    - task: CmdLine@2
+      name: CheckAndCopyFiles
+      displayName: 'Check flag and copy files to local build agent'
+      inputs:
+        script: |
+          echo Checking model_modified.txt flag...
+          set /p FLAG=<model_outputs\model_modified.txt
+          if "%FLAG%"=="True" (
+            echo Copying model_outputs folder to local build agent...
+            xcopy model_outputs C:\local_build_agent\model_outputs /s /e /y
+            echo Flag is True. Changing flag to False...
+            echo False > model_outputs\model_modified.txt
           ) else (
-            echo "Existing Python installation found."
-            for /f "tokens=*" %%a in ('where python') do (
-              echo "Removing Python installation at %%a"
-              rmdir /s /q "%%~dpa"
-            )
+            echo Flag is not True. No action taken.
           )
 
-    # Install Python if not already installed
-    - task: CmdLine@2
-      name: InstallPython
-      displayName: 'Install Python'
-      inputs:
-        script: |
-          echo Installing Python...
-          curl -o python-installer.exe https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
-          python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 /log install.log
-          type install.log
-          if exist "C:\Python39\python.exe" ( 
-              set "PYTHON_PATH=C:\Python39" 
-          ) else (
-              echo "Python installation failed."
-              exit 1
-          )
-          set "PATH=%PATH%;%PYTHON_PATH%\Scripts;%PYTHON_PATH%"
-
-    # Install AWS CLI
-    - task: CmdLine@2
-      name: InstallAWSCLI
-      displayName: 'Install AWS CLI'
-      inputs:
-        script: |
-          echo Installing AWS CLI...
-          curl "https://awscli.amazonaws.com/AWSCLIV2.msi" -o "AWSCLIV2.msi"
-          msiexec.exe /i AWSCLIV2.msi /quiet
-          if exist "C:\Program Files\Amazon\AWSCLIV2\aws.exe" ( 
-              set "AWS_CLI_PATH=C:\Program Files\Amazon\AWSCLIV2" 
-          ) else (
-              echo "AWS CLI installation failed."
-              exit 1
-          )
-          set "PATH=%PATH%;%AWS_CLI_PATH%"
-
-    # Configure AWS credentials
-    - task: CmdLine@2
-      name: ConfigureAWSCredentials
-      displayName: 'Configure AWS CLI credentials'
-      inputs:
-        script: |
-          echo Configuring AWS credentials...
-          aws configure set aws_access_key_id %aws_id%
-          aws configure set aws_secret_access_key %aws_access_key%
-          aws configure set default.region us-east-1
-
-    # Create S3 bucket
-    - task: CmdLine@2
-      name: createS3
-      displayName: 'Create S3 bucket'
-      inputs:
-        script: |
-          cd az-devops\aws-ep7
-          %PYTHON_PATH%\python -m venv env
-          call env\Scripts\activate.bat
-          %PYTHON_PATH%\Scripts\pip install awscli
-          aws s3api create-bucket --bucket dl-azdevops-ep7 --region us-east-1
-          deactivate
-
-  # CD Job
-  - job: uploadJob
-    dependsOn: createStorage
-    #### Steps inside the Job
-    steps:
-
-    - task: CmdLine@2
-      name: uploadToS3
-      displayName: 'Upload files to S3 bucket'
-      inputs:
-        script: |
-          cd az-devops\aws-ep7
-          call env\Scripts\activate.bat
-          %PYTHON_PATH%\Scripts\pip install awscli
-          aws s3 sync . s3://dl-azdevops-ep7
-          deactivate
