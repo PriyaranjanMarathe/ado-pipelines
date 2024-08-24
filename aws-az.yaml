@@ -17,26 +17,17 @@ stages:
     #### Steps inside the Job
     steps:
 
-    # Check if Python is already installed
-    - task: CmdLine@2
-      name: CheckPython
-      displayName: 'Check if Python is installed'
-      inputs:
-        script: |
-          python --version || (echo "Python is not installed." && exit 0)
-
-    # Install Python if it's not already installed
+    # Install Python if not already installed
     - task: CmdLine@2
       name: InstallPython
       displayName: 'Install Python'
-      condition: and(succeeded(), contains(variables['CheckPython.Output'], 'Python is not installed.'))
       inputs:
         script: |
           echo Installing Python...
           curl -o python-installer.exe https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
           python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 /log install.log
           type install.log
-          echo Python installed.
+          set "PATH=%PATH%;C:\Python39\Scripts;C:\Python39"
 
     # Install AWS CLI
     - task: CmdLine@2
@@ -47,7 +38,7 @@ stages:
           echo Installing AWS CLI...
           curl "https://awscli.amazonaws.com/AWSCLIV2.msi" -o "AWSCLIV2.msi"
           msiexec.exe /i AWSCLIV2.msi /quiet
-          echo AWS CLI installed.
+          set "PATH=%PATH%;C:\Program Files\Amazon\AWSCLIV2\"
 
     # Create S3 bucket
     - task: CmdLine@2
@@ -56,9 +47,9 @@ stages:
       inputs:
         script: |
           cd az-devops\aws-ep7
-          python -m venv env
+          C:\Python39\python -m venv env
           call env\Scripts\activate.bat
-          pip install awscli
+          C:\Python39\Scripts\pip install awscli
           set AWS_ACCESS_KEY_ID=%aws_id%
           set AWS_SECRET_ACCESS_KEY=%aws_access_key%
           aws s3api create-bucket --bucket dl-azdevops-ep7 --region us-east-1
@@ -77,7 +68,7 @@ stages:
         script: |
           cd az-devops\aws-ep7
           call env\Scripts\activate.bat
-          pip install awscli
+          C:\Python39\Scripts\pip install awscli
           set AWS_ACCESS_KEY_ID=%aws_id%
           set AWS_SECRET_ACCESS_KEY=%aws_access_key%
           aws s3 sync . s3://dl-azdevops-ep7
