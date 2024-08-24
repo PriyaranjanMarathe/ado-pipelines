@@ -26,7 +26,7 @@ stages:
           echo Creating model_outputs folder...
           mkdir C:\agent\_work\model_outputs
           echo Creating champion_model.pt file...
-          echo > C:\agent\_work\model_outputs\champion_model.pt
+          echo. > C:\agent\_work\model_outputs\champion_model.pt
 
     # Step 2: Create a file "model_modified.txt" with flag "True"
     - task: CmdLine@2
@@ -48,7 +48,7 @@ stages:
           if "%FLAG%"=="True" (
             echo Copying model_outputs folder to local build agent...
             xcopy C:\agent\_work\model_outputs C:\agent\_work\_model_outputs_copy /s /e /y
-            echo Flag is True. Changing flag in local model_modified.txt to False...
+            echo Flag is True. Changing flag in copied model_modified.txt to False...
             echo False > C:\agent\_work\_model_outputs_copy\model_modified.txt
           ) else (
             echo Flag is not True. No action taken.
