@@ -24,12 +24,15 @@ stages:
       inputs:
         script: |
           echo Checking for existing Python installation...
-          where python || (
+          where python
+          if %ERRORLEVEL% NEQ 0 (
             echo "No existing Python installation found."
-          )
-          if exist "C:\Python39" (
-            echo "Existing Python installation found. Removing..."
-            rmdir /s /q C:\Python39
+          ) else (
+            echo "Existing Python installation found."
+            for /f "tokens=*" %%a in ('where python') do (
+              echo "Removing Python installation at %%a"
+              rmdir /s /q "%%~dpa"
+            )
           )
 
     # Install Python if not already installed
