@@ -18,6 +18,26 @@ stages:
     steps:
 
     - task: CmdLine@2
+      name: InstallPython
+      displayName: 'Install Python'
+      inputs:
+        script: |
+          echo Installing Python...
+          curl -o python-installer.exe https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
+          python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
+          echo Python installed.
+
+    - task: CmdLine@2
+      name: InstallAWSCLI
+      displayName: 'Install AWS CLI'
+      inputs:
+        script: |
+          echo Installing AWS CLI...
+          curl "https://awscli.amazonaws.com/AWSCLIV2.msi" -o "AWSCLIV2.msi"
+          msiexec.exe /i AWSCLIV2.msi /quiet
+          echo AWS CLI installed.
+
+    - task: CmdLine@2
       name: createS3
       displayName: 'Create S3 bucket'
       inputs:
@@ -43,7 +63,6 @@ stages:
       inputs:
         script: |
           cd az-devops\aws-ep7
-          python -m venv env
           call env\Scripts\activate.bat
           pip install awscli
           set AWS_ACCESS_KEY_ID=%aws_id%
