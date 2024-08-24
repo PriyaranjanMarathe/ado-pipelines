@@ -17,16 +17,28 @@ stages:
     #### Steps inside the Job
     steps:
 
+    # Check if Python is already installed
+    - task: CmdLine@2
+      name: CheckPython
+      displayName: 'Check if Python is installed'
+      inputs:
+        script: |
+          python --version || echo "Python is not installed."
+
+    # Install Python if it's not already installed
     - task: CmdLine@2
       name: InstallPython
       displayName: 'Install Python'
+      condition: and(succeeded(), contains(variables['CheckPython.Output'], 'Python is not installed.'))
       inputs:
         script: |
           echo Installing Python...
           curl -o python-installer.exe https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
-          python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
+          python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 /log install.log
+          type install.log
           echo Python installed.
 
+    # Install AWS CLI
     - task: CmdLine@2
       name: InstallAWSCLI
       displayName: 'Install AWS CLI'
@@ -37,6 +49,7 @@ stages:
           msiexec.exe /i AWSCLIV2.msi /quiet
           echo AWS CLI installed.
 
+    # Create S3 bucket
     - task: CmdLine@2
       name: createS3
       displayName: 'Create S3 bucket'
