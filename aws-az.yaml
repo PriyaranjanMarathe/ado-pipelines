@@ -2,7 +2,9 @@ trigger:
 - nomain
 
 pool:
-  vmImage: ubuntu-latest
+  name: Default
+  demands:
+   - agent.name -equals local-pc 
 
 stages:
 - stage: stage1
