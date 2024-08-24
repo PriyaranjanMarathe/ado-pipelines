@@ -26,7 +26,7 @@ stages:
           source env/bin/activate
           pip install awscli
           export AWS_ACCESS_KEY_ID="$(aws_id)"
-          export AWS_SECRET_ACCESS_KEY="$(aws_key)"
+          export AWS_SECRET_ACCESS_KEY="$(aws_access_key)"
           aws s3api create-bucket --bucket dl-azdevops-ep7 --region us-east-1
           deactivate
 
@@ -47,6 +47,6 @@ stages:
           source env/bin/activate
           pip install awscli
           export AWS_ACCESS_KEY_ID="$(aws_id)"
-          export AWS_SECRET_ACCESS_KEY="$(aws_key)"
+          export AWS_SECRET_ACCESS_KEY="$(aws_access_key)"
           aws s3 sync ./data s3://dl-azdevops-ep7
           deactivate
